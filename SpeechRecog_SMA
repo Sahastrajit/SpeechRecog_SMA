@@ -1,0 +1,101 @@
+from transformers import pipeline
+import random
+import speech_recognition as sr
+
+# Initialize sentiment analysis pipeline using BERT
+sentiment_classifier = pipeline("sentiment-analysis")
+
+# Responses for different sentiments
+positive_responses = [
+    "It seems like you're feeling positive today!",
+    "Great to hear that you're feeling good!",
+    "You seem to be in a positive state of mind!"
+]
+
+neutral_responses = [
+    "You seem to have a neutral feeling right now.",
+    "It looks like you're feeling neither too positive nor too negative.",
+    "You might be in a neutral state of mind at the moment."
+]
+
+negative_responses = [
+    "I sense that you're not feeling very positive.",
+    "It seems like you're having a tough time.",
+    "I'm sorry to hear that you're feeling down."
+]
+
+# Generate 2000 random suggestions
+random_suggestions = [
+    "Try going for a walk in nature.",
+    "Listen to your favorite music playlist.",
+    "Take some time to practice mindfulness and deep breathing exercises.",
+    "Consider trying out a new hobby or activity.",
+    "Reach out to a friend or family member for support and conversation.",
+    "Watch a funny movie or show to lift your spirits.",
+    "Try journaling to express your thoughts and emotions.",
+    "Do something creative like drawing, painting, or writing.",
+    "Take a break and enjoy a warm cup of tea or coffee.",
+    "Focus on self-care activities like taking a relaxing bath or pampering yourself."
+]
+
+# Generate 2000 entries for each feeling category
+positive_support_ideas = [None] * 2000
+neutral_support_ideas = [random.choice(random_suggestions) for _ in range(2000)]
+negative_support_ideas = [random.choice(random_suggestions) for _ in range(2000)]
+
+# Main function to interact with the user
+def main():
+    print("Welcome to the Feelings Analyzer Chatbot!")
+    print("Type 'exit' to end the conversation.\n")
+
+    # Initialize the recognizer
+    recognizer = sr.Recognizer()
+    print("Make sure a mic is connected!")
+    # Use the microphone as the source for audio input
+    with sr.Microphone() as source:
+        print("Speak something...")
+
+        # Adjust for ambient noise
+        recognizer.adjust_for_ambient_noise(source)
+
+        # Continuously listen for audio input
+        while True:
+            try:
+                audio = recognizer.listen(source)  # Listen for audio input
+
+                # Use Google Speech Recognition to convert audio to text
+                text = recognizer.recognize_google(audio)
+                print("You said:", text)  # Display the recognized text
+
+                if text.lower() == 'exit':
+                    print("Goodbye! Take care of yourself.")
+                    break
+
+                # Perform sentiment analysis using BERT
+                result = sentiment_classifier(text)
+                label = result[0]['label']
+
+                if label == 'POSITIVE':
+                    response = random.choice(positive_responses)
+                    support_suggestion = None
+                elif label == 'NEUTRAL':
+                    response = random.choice(neutral_responses)
+                    support_suggestion = random.choice(neutral_support_ideas)
+                else:
+                    response = random.choice(negative_responses)
+                    support_suggestion = random.choice(negative_support_ideas)
+
+                full_response = response
+                if support_suggestion:
+                    full_response += " Here's a suggestion to help you: " + support_suggestion
+
+                print("Chatbot:", full_response)  # Display the chatbot's response
+
+            except sr.UnknownValueError:
+                print("Sorry, I could not understand what you said.")
+
+            except sr.RequestError as e:
+                print("Error fetching results; {0}".format(e))
+
+if __name__ == "__main__":
+    main()
